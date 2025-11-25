@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VM
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd /home/${{ secrets.VM_USER }}/rag-chat || mkdir -p /home/${{ secrets.VM_USER }}/rag-chat
+            cd /home/${{ secrets.VM_USER }}/rag-chat
+            
+            # Pull latest code
+            if [ -d .git ]; then
+              git pull origin main
+            else
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+            fi
+            
+            # Stop existing containers
+            docker-compose -f docker-compose.prod.yml down
+            
+            # Build and start
+            docker-compose -f docker-compose.prod.yml build
+            docker-compose -f docker-compose.prod.yml up -d
+            
+            # Ingest data (first time only)
+            docker-compose -f docker-compose.prod.yml exec -T backend node src/scripts/ingestNews.js || true
+            
+            # Cleanup
+            docker system prune -f
+          EOF
