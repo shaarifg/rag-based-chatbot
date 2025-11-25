@@ -33,21 +33,25 @@ jobs:
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
-            # Stop existing containers
-            docker compose down
-            
-            # Build and start
-            docker compose build --no-cache
+            # Build and restart only changed services
+            docker compose build
             docker compose up -d
             
             # Wait for services
             sleep 10
             
-            # Ingest data (first time only)
-            docker compose exec -T backend node src/scripts/ingestNews.js || true
+            # Check if Qdrant collection exists (data already ingested)
+            COLLECTION_EXISTS=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -q 'result' && echo 'yes' || echo 'no'")
             
-            # Cleanup old images
-            docker system prune -af --volumes
+            if [ "$COLLECTION_EXISTS" = "no" ]; then
+              echo "📦 No data found - Running ingestion..."
+              docker compose exec -T backend node src/scripts/ingestNews.js
+            else
+              echo "✅ Data already exists - Skipping ingestion"
+            fi
+            
+            # Cleanup only dangling images (not volumes!)
+            docker image prune -f
             
             # Show running containers
             docker compose ps
