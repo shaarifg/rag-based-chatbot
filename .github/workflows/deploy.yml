@@ -30,7 +30,7 @@ jobs:
             if [ -d .git ]; then
               git pull origin main
             else
-              git clone https://github.com/sharifg/rag-based-chatbot.git .
+              git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
             # Verify we're in the right directory
