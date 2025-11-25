@@ -34,15 +34,34 @@ jobs:
             fi
             
             # Stop existing containers
-            docker-compose -f docker-compose.yml down
+            docker-compose down
             
             # Build and start
-            docker-compose -f docker-compose.yml build
-            docker-compose -f docker-compose.yml up -d
+            docker-compose build --no-cache
+            docker-compose up -d
+            
+            # Wait for services
+            sleep 10
             
             # Ingest data (first time only)
-            docker-compose -f docker-compose.yml exec -T backend node src/scripts/ingestNews.js || true
+            docker-compose exec -T backend node src/scripts/ingestNews.js || true
             
-            # Cleanup
-            docker system prune -f
+            # Cleanup old images
+            docker system prune -af --volumes
+            
+            # Show running containers
+            docker-compose ps
+          EOF
+
+      - name: Verify Deployment
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            echo "=== Container Status ==="
+            docker ps
+            echo ""
+            echo "=== Backend Health Check ==="
+            curl -f http://localhost:3000/health || echo "Backend not ready"
+            echo ""
+            echo "=== Frontend Check ==="
+            curl -f http://localhost:8080 || echo "Frontend not ready"
           EOF
