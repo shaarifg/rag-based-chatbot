@@ -33,28 +33,24 @@ jobs:
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
-            # Verify we're in the right directory
-            pwd
-            ls -la docker-compose.yml
-            
             # Stop existing containers
-            docker compose -f docker-compose.yml down
+            docker compose down
             
             # Build and start
-            docker compose -f docker-compose.yml build --no-cache
-            docker compose -f docker-compose.yml up -d
+            docker compose build --no-cache
+            docker compose up -d
             
             # Wait for services
             sleep 10
             
             # Ingest data (first time only)
-            docker compose -f docker-compose.yml exec -T backend node src/scripts/ingestNews.js || true
+            docker compose exec -T backend node src/scripts/ingestNews.js || true
             
             # Cleanup old images
             docker system prune -af --volumes
             
             # Show running containers
-            docker compose -f docker-compose.yml ps
+            docker compose ps
           EOF
 
       - name: Verify Deployment
