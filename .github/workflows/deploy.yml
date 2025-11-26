@@ -33,27 +33,35 @@ jobs:
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
-            # Build and restart only changed services
-            docker compose build
-            docker compose up -d
+            # Ensure Redis and Qdrant are running (never stop these)
+            docker compose up -d redis qdrant
             
-            # Wait for services
-            sleep 10
+            # Stop only backend and frontend
+            docker compose stop backend frontend
             
-            # Check if Qdrant collection exists (data already ingested)
-            COLLECTION_EXISTS=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -q 'result' && echo 'yes' || echo 'no'")
+            # Build and start backend and frontend
+            docker compose build backend frontend
+            docker compose up -d backend frontend
             
-            if [ "$COLLECTION_EXISTS" = "no" ]; then
-              echo "📦 No data found - Running ingestion..."
+            # Wait for backend to be ready
+            sleep 15
+            
+            # Check if data exists in Qdrant
+            echo "🔍 Checking for existing data..."
+            DATA_CHECK=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
+            
+            if [ "$DATA_CHECK" -eq "0" ]; then
+              echo "📦 No data found - Running ingestion (this takes ~1 minute)..."
               docker compose exec -T backend node src/scripts/ingestNews.js
+              echo "✅ Ingestion complete"
             else
               echo "✅ Data already exists - Skipping ingestion"
             fi
             
-            # Cleanup only dangling images (not volumes!)
+            # Cleanup only dangling images
             docker image prune -f
             
-            # Show running containers
+            # Show status
             docker compose ps
           EOF
 
