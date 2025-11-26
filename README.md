@@ -21,6 +21,7 @@ A production-ready RAG (Retrieval-Augmented Generation) chatbot with real-time s
 ## 🚀 Features
 
 ### Backend
+
 - ✅ Express.js REST API + Socket.io (real-time streaming)
 - ✅ RAG pipeline with Jina embeddings + Qdrant vector store
 - ✅ Redis session caching (1hr TTL)
@@ -28,6 +29,7 @@ A production-ready RAG (Retrieval-Augmented Generation) chatbot with real-time s
 - ✅ News article ingestion from RSS feeds
 
 ### Frontend
+
 - ✅ React 18 + Vite
 - ✅ Light/Dark theme toggle
 - ✅ GitHub-style markdown rendering
@@ -95,10 +97,12 @@ docker compose -f docker-compose.dev.yml up -d
 ```
 
 This starts:
+
 - **Redis** on `localhost:6379`
 - **Qdrant** on `localhost:6333`
 
 Verify services are running:
+
 ```bash
 docker ps
 ```
@@ -144,6 +148,7 @@ TOP_K_RESULTS=5
 ```
 
 **Get API Keys:**
+
 - **Jina Embeddings**: https://jina.ai/embeddings/ (Free tier available)
 - **Google Gemini**: https://makersuite.google.com/app/apikey (Free tier available)
 
@@ -154,6 +159,7 @@ npm run ingest
 ```
 
 Expected output:
+
 ```
 📰 Fetching RSS feeds...
 ✅ Fetched 15 articles from NY Times
@@ -172,6 +178,7 @@ npm run dev
 Backend runs on `http://localhost:3000`
 
 Test:
+
 ```bash
 curl http://localhost:3000/health
 ```
@@ -213,6 +220,7 @@ Frontend runs on `http://localhost:5173`
 Navigate to `http://localhost:5173`
 
 You should see:
+
 - ✅ Chat interface with light theme
 - ✅ Connection status: "Connected"
 - ✅ Welcome message with suggestions
@@ -268,6 +276,7 @@ docker compose up -d --build
 ```
 
 Services:
+
 - Frontend: `http://localhost:80`
 - Backend: `http://localhost:3000`
 - Redis: Internal
@@ -318,21 +327,21 @@ See [deployment guide](./.github/workflows/deploy.yml) for automated CI/CD setup
 
 ### Backend Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `JINA_API_KEY` | Jina embeddings API key | ✅ Yes | - |
-| `GEMINI_API_KEY` | Google Gemini API key | ✅ Yes | - |
-| `REDIS_HOST` | Redis hostname | No | localhost |
-| `QDRANT_URL` | Qdrant URL | No | http://localhost:6333 |
-| `GEMINI_MODEL` | Gemini model name | No | gemini-1.5-flash |
-| `PORT` | Backend port | No | 3000 |
+| Variable         | Description             | Required | Default               |
+| ---------------- | ----------------------- | -------- | --------------------- |
+| `JINA_API_KEY`   | Jina embeddings API key | ✅ Yes   | -                     |
+| `GEMINI_API_KEY` | Google Gemini API key   | ✅ Yes   | -                     |
+| `REDIS_HOST`     | Redis hostname          | No       | localhost             |
+| `QDRANT_URL`     | Qdrant URL              | No       | http://localhost:6333 |
+| `GEMINI_MODEL`   | Gemini model name       | No       | gemini-1.5-flash      |
+| `PORT`           | Backend port            | No       | 3000                  |
 
 ### Frontend Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `VITE_API_URL` | Backend API URL | No | http://localhost:3000 |
-| `VITE_SOCKET_URL` | Socket.io URL | No | http://localhost:3000 |
+| Variable          | Description     | Required | Default               |
+| ----------------- | --------------- | -------- | --------------------- |
+| `VITE_API_URL`    | Backend API URL | No       | http://localhost:3000 |
+| `VITE_SOCKET_URL` | Socket.io URL   | No       | http://localhost:3000 |
 
 ---
 
@@ -365,20 +374,28 @@ GET /api/chat/sessions
 
 ```javascript
 // Connect and join
-socket.emit('join-session', sessionId)
+socket.emit("join-session", sessionId);
 
 // Send message (streaming)
-socket.emit('send-message', { sessionId, message })
-socket.on('response-chunk', (data) => { /* streaming token */ })
-socket.on('response-complete', (data) => { /* full response */ })
+socket.emit("send-message", { sessionId, message });
+socket.on("response-chunk", (data) => {
+  /* streaming token */
+});
+socket.on("response-complete", (data) => {
+  /* full response */
+});
 
 // Get history
-socket.emit('get-history', { sessionId })
-socket.on('history', (data) => { /* message history */ })
+socket.emit("get-history", { sessionId });
+socket.on("history", (data) => {
+  /* message history */
+});
 
 // Clear session
-socket.emit('clear-session', { sessionId })
-socket.on('session-cleared', (data) => { /* confirmed */ })
+socket.emit("clear-session", { sessionId });
+socket.on("session-cleared", (data) => {
+  /* confirmed */
+});
 ```
 
 ---
@@ -388,6 +405,7 @@ socket.on('session-cleared', (data) => { /* confirmed */ })
 ### Backend Issues
 
 **Redis connection failed:**
+
 ```bash
 # Check if Redis is running
 docker ps | grep redis
@@ -397,6 +415,7 @@ docker compose -f docker-compose.dev.yml restart redis
 ```
 
 **Qdrant connection failed:**
+
 ```bash
 # Check Qdrant
 curl http://localhost:6333/collections
@@ -406,6 +425,7 @@ docker compose -f docker-compose.dev.yml restart qdrant
 ```
 
 **No embeddings found:**
+
 ```bash
 # Check collection
 curl http://localhost:6333/collections/news_embeddings
@@ -418,11 +438,13 @@ npm run ingest
 ### Frontend Issues
 
 **Socket not connecting:**
+
 1. Check backend is running: `curl http://localhost:3000/health`
 2. Verify `VITE_SOCKET_URL` in `.env`
 3. Check browser console for errors
 
 **Theme not persisting:**
+
 1. Clear localStorage: `localStorage.clear()`
 2. Check browser allows localStorage
 
@@ -431,6 +453,7 @@ npm run ingest
 ## 📦 Dependencies
 
 ### Backend
+
 - express: 4.18.2
 - socket.io: 4.6.2
 - ioredis: 5.3.2
@@ -441,28 +464,13 @@ npm run ingest
 - cheerio: 1.0.0-rc.12
 
 ### Frontend
+
 - react: 18.2.0
 - socket.io-client: 4.6.2
 - react-markdown: 9.0.1
 - remark-gfm: 4.0.0
 - axios: 1.6.2
 - sass: 1.69.5
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open Pull Request
-
----
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details
 
 ---
 
@@ -478,16 +486,19 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 💡 Tips
 
 **For Development:**
+
 - Use `docker-compose.dev.yml` (only Redis + Qdrant)
 - Run backend and frontend separately with `npm run dev`
 - Hot reload enabled for both
 
 **For Production:**
+
 - Use `docker-compose.yml` (all services containerized)
 - Set `NODE_ENV=production`
 - Use reverse proxy (Nginx) for SSL
 
 **Performance:**
+
 - Embeddings cached in Redis (24hr TTL)
 - Sessions cached (1hr TTL, configurable)
 - Vector search uses HNSW index
@@ -497,10 +508,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 📧 Support
 
 For issues and questions:
+
 - Open an issue on GitHub
 - Check [Troubleshooting](#-troubleshooting) section
 - Review component READMEs
 
 ---
-
-**Made with ❤️ using Express.js, React, and AI**
