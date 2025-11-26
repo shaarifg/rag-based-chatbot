@@ -45,9 +45,9 @@ jobs:
           REDIS_PORT=6379
           QDRANT_URL=http://qdrant:6333
           QDRANT_COLLECTION=news_embeddings
-          JINA_API_KEY=${JINA_API_KEY}
+          JINA_API_KEY=${{ secrets.JINA_API_KEY }}
           JINA_MODEL=jina-embeddings-v2-base-en
-          GEMINI_API_KEY=${GEMINI_API_KEY}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL=gemini-2.5-flash
           DB_ENABLED=false
           SESSION_TTL=3600
@@ -57,8 +57,8 @@ jobs:
             
             # Create frontend .env (BEFORE build)
             cat > frontend/.env << 'ENVFILE'
-          VITE_API_URL=http://${VM_IP}/backend
-          VITE_SOCKET_URL=http://${VM_IP}
+          VITE_API_URL=http://${{ secrets.VM_HOST }}/backend
+          VITE_SOCKET_URL=http://${{ secrets.VM_HOST }}
           ENVFILE
             
             # Ensure Redis and Qdrant are running
