@@ -21,23 +21,19 @@ jobs:
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to VM
-        env:
-          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          VM_IP: ${{ secrets.VM_HOST }}
         run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} bash << 'ENDSSH'
             cd /home/${{ secrets.VM_USER }}/rag-chat || mkdir -p /home/${{ secrets.VM_USER }}/rag-chat
             cd /home/${{ secrets.VM_USER }}/rag-chat
             
-            # Pull latest code
+            echo "📥 Pulling latest code..."
             if [ -d .git ]; then
               git pull origin main
             else
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
-            # Create backend .env
+            echo "⚙️  Creating backend .env..."
             cat > backend/.env << 'ENVFILE'
           PORT=3000
           NODE_ENV=production
@@ -48,33 +44,34 @@ jobs:
           JINA_API_KEY=${{ secrets.JINA_API_KEY }}
           JINA_MODEL=jina-embeddings-v2-base-en
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL=gemini-2.5-flash
+          GEMINI_MODEL=gemini-1.5-flash
           DB_ENABLED=false
           SESSION_TTL=3600
           TOP_K_RESULTS=5
           MAX_CONTEXT_LENGTH=4000
           ENVFILE
             
-            # Create frontend .env (BEFORE build)
-            cat > frontend/.env << 'ENVFILE'
+            echo "⚙️  Creating frontend .env..."
+            cat > frontend/.env << ENVFILE
           VITE_API_URL=http://${{ secrets.VM_HOST }}/backend
           VITE_SOCKET_URL=http://${{ secrets.VM_HOST }}
           ENVFILE
             
-            # Ensure Redis and Qdrant are running
+            echo "🔄 Ensuring Redis and Qdrant are running..."
             docker compose up -d redis qdrant
             
-            # Stop only backend and frontend
-            docker compose stop backend frontend
+            echo "🛑 Stopping backend and frontend..."
+            docker compose stop backend frontend 2>/dev/null || true
             
-            # Build (frontend .env is now available)
+            echo "🔨 Building backend and frontend..."
             docker compose build backend frontend
+            
+            echo "🚀 Starting backend and frontend..."
             docker compose up -d backend frontend
             
-            # Wait for backend
-            sleep 15
+            echo "⏳ Waiting for services..."
+            sleep 20
             
-            # Check if data exists
             echo "🔍 Checking for existing data..."
             DATA_CHECK=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
             
@@ -86,22 +83,38 @@ jobs:
               echo "✅ Data exists - Skipping ingestion"
             fi
             
-            # Cleanup
+            echo "🧹 Cleanup..."
             docker image prune -f
             
-            # Show status
+            echo "📊 Container Status:"
             docker compose ps
+            
+            echo ""
+            echo "📝 Backend logs (last 10 lines):"
+            docker compose logs --tail=10 backend
           ENDSSH
 
       - name: Verify Deployment
         run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            echo "=== Container Status ==="
-            docker ps
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+            echo "========================================="
+            echo "🏥 HEALTH CHECKS"
+            echo "========================================="
+            
+            cd /home/${{ secrets.VM_USER }}/rag-chat
+            
             echo ""
-            echo "=== Backend Health Check ==="
-            curl -f http://localhost:3000/health || echo "Backend not ready"
+            echo "📦 All Containers:"
+            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            
             echo ""
-            echo "=== Frontend Check ==="
-            curl -f http://localhost:8080 || echo "Frontend not ready"
-          EOF
+            echo "🔧 Backend Health:"
+            curl -f -s http://localhost:3000/health && echo "✅ Backend OK" || echo "❌ Backend FAILED"
+            
+            echo ""
+            echo "🎨 Frontend Health:"
+            curl -f -s http://localhost:8080 && echo "✅ Frontend OK" || echo "❌ Frontend FAILED"
+            
+            echo ""
+            echo "========================================="
+          ENDSSH
