@@ -38,6 +38,29 @@ jobs:
             
             # Stop only backend and frontend
             docker compose stop backend frontend
+
+            # Create .env files from secrets
+            cat > backend/.env << EOL
+            PORT=3000
+            NODE_ENV=production
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            QDRANT_URL=http://qdrant:6333
+            QDRANT_COLLECTION=news_embeddings
+            JINA_API_KEY=${{ secrets.JINA_API_KEY }}
+            JINA_MODEL=jina-embeddings-v2-base-en
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            GEMINI_MODEL=gemini-2.5-flash
+            DB_ENABLED=false
+            SESSION_TTL=3600
+            TOP_K_RESULTS=5
+            MAX_CONTEXT_LENGTH=4000
+            EOL
+            
+            cat > frontend/.env << EOL
+            VITE_API_URL=http://34.93.236.123/backend
+            VITE_SOCKET_URL=http://34.93.236.123
+            EOL
             
             # Build and start backend and frontend
             docker compose build backend frontend
