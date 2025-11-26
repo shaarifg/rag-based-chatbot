@@ -11,7 +11,7 @@ const Header = ({ connected, sessionId }) => {
         <div className="header__left">
           <h1 className="header__title">
             <span className="header__title-icon">◆</span>
-            NewVoosh
+            NewsVoosh
           </h1>
           {sessionId && (
             <span className="header__session">

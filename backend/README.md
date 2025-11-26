@@ -1,92 +1,191 @@
-# RAG-Based Chat Backend with Express.js
+# Backend - RAG Chat API
 
-Production-ready RAG pipeline with news article ingestion, vector search, and real-time chat capabilities.
+Express.js backend with RAG pipeline, real-time streaming, and vector search.
 
-## Architecture
+---
+
+## 📋 Table of Contents
+
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Setup](#-setup)
+- [API Reference](#-api-reference)
+- [Services](#-services)
+- [Configuration](#-configuration)
+- [Scripts](#-scripts)
+
+---
+
+## 🏗 Architecture
 
 ```
-├── REST API (Express)
-├── Socket.io (Real-time chat)
-├── Redis (Session caching)
-├── Qdrant (Vector store)
-├── PostgreSQL (Optional persistence)
-├── Jina Embeddings API
-└── Google Gemini API
+┌─────────────────────────────────────────┐
+│         Express.js Server               │
+│  ┌─────────────────────────────────┐   │
+│  │     Routes & Controllers        │   │
+│  └────────────┬────────────────────┘   │
+│               │                         │
+│  ┌────────────▼────────────────────┐   │
+│  │      Services Layer             │   │
+│  │  • RAG Service                  │   │
+│  │  • LLM Service (Gemini)         │   │
+│  │  • Embedding Service (Jina)     │   │
+│  └────────────┬────────────────────┘   │
+│               │                         │
+│  ┌────────────▼────────────────────┐   │
+│  │      Database Layer             │   │
+│  │  • Redis (sessions)             │   │
+│  │  • Qdrant (vectors)             │   │
+│  │  • PostgreSQL (optional)        │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
 ```
 
-## Features
+**Design Principles:**
+- **Separation of Concerns**: Controllers → Services → Database
+- **Dependency Injection**: Shared service instances
+- **Error Handling**: Centralized middleware
+- **Configuration**: Environment-based
+- **Type Safety**: ES6 modules
 
-✅ **RAG Pipeline**
-- Ingest ~50 news articles from RSS feeds
-- Jina Embeddings (free tier)
-- Qdrant vector store
-- Top-K retrieval with semantic search
+---
 
-✅ **Backend API**
-- REST endpoints for chat
-- Socket.io for streaming responses
-- Session management with Redis
-- Optional PostgreSQL persistence
+## 🛠 Tech Stack
 
-✅ **Caching & Performance**
-- Redis for session history (in-memory)
-- Embedding cache (1 day TTL)
-- Configurable session TTL
-- Connection pooling
+### Core Framework
+- **Express.js** `4.18.2` - Web framework
+- **Socket.io** `4.6.2` - Real-time communication
 
-## Setup
+### Databases
+- **Redis (ioredis)** `5.3.2` - Session caching
+- **Qdrant** `1.7.0` - Vector database
+- **PostgreSQL (pg)** `8.11.3` - Optional persistence
+
+### AI/ML Services
+- **Google Generative AI** `0.1.3` - LLM (Gemini)
+- **Jina Embeddings** - Vector embeddings API
+
+### Data Processing
+- **Axios** `1.6.2` - HTTP client
+- **RSS Parser** `3.13.0` - Feed parsing
+- **Cheerio** `1.0.0-rc.12` - HTML parsing
+
+### Utilities
+- **UUID** `9.0.1` - Session IDs
+- **Dotenv** `16.3.1` - Environment config
+
+---
+
+## 📁 Project Structure
+
+```
+backend/
+├── src/
+│   ├── config/
+│   │   └── index.js              # Environment configuration
+│   │
+│   ├── controllers/
+│   │   └── chatController.js     # Request handlers
+│   │
+│   ├── services/
+│   │   ├── ragService.js         # RAG orchestration
+│   │   ├── llmService.js         # Gemini API integration
+│   │   └── embeddingService.js   # Jina embeddings
+│   │
+│   ├── database/
+│   │   ├── redis.js              # Redis client
+│   │   ├── vectorStore.js        # Qdrant client
+│   │   └── postgres.js           # PostgreSQL client
+│   │
+│   ├── routes/
+│   │   └── chatRoutes.js         # API routes
+│   │
+│   ├── sockets/
+│   │   └── chatSocket.js         # Socket.io handlers
+│   │
+│   ├── middleware/
+│   │   └── errorHandler.js       # Error handling
+│   │
+│   ├── scripts/
+│   │   └── ingestNews.js         # Data ingestion
+│   │
+│   ├── app.js                    # Express app setup
+│   └── server.js                 # Entry point
+│
+├── package.json
+├── Dockerfile
+└── .env.example
+```
+
+---
+
+## 🚀 Setup
 
 ### 1. Install Dependencies
 
 ```bash
-cd rag-backend
+cd backend
 npm install
 ```
 
-### 2. Start Services
-
-**Redis:**
-```bash
-docker run -d -p 6379:6379 redis:alpine
-```
-
-**Qdrant:**
-```bash
-docker run -d -p 6333:6333 qdrant/qdrant
-```
-
-**PostgreSQL (Optional):**
-```bash
-docker run -d -p 5432:5432 \
-  -e POSTGRES_DB=rag_chat \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  postgres:15
-```
-
-### 3. Configure Environment
+### 2. Configure Environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+**Edit `.env`:**
+
 ```env
-JINA_API_KEY=your_jina_api_key
-GEMINI_API_KEY=your_gemini_api_key
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Redis (use localhost for local dev)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+SESSION_TTL=3600
+
+# Qdrant
+QDRANT_URL=http://localhost:6333
+QDRANT_COLLECTION=news_embeddings
+
+# Jina Embeddings (REQUIRED)
+JINA_API_KEY=your_key_here
+JINA_MODEL=jina-embeddings-v2-base-en
+
+# Google Gemini (REQUIRED)
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-1.5-flash
+
+# PostgreSQL (Optional)
+DB_ENABLED=false
+DB_TYPE=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=rag_chat
+DB_USER=postgres
+DB_PASSWORD=postgres
+
+# RAG Settings
+TOP_K_RESULTS=5
+MAX_CONTEXT_LENGTH=4000
 ```
 
-Get API keys:
-- Jina: https://jina.ai/embeddings/
-- Gemini: https://makersuite.google.com/app/apikey
+### 3. Start Dependencies
 
-### 4. Ingest News Articles
+```bash
+# From project root
+docker compose -f docker-compose.dev.yml up -d
+```
+
+### 4. Ingest Data
 
 ```bash
 npm run ingest
 ```
-
-This fetches ~50 articles from RSS feeds and indexes them.
 
 ### 5. Start Server
 
@@ -96,241 +195,504 @@ npm run dev
 
 Server runs on `http://localhost:3000`
 
-## API Endpoints
+---
 
-### REST API
+## 📡 API Reference
 
-**Create Session**
-```bash
+### REST Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### Create Session
+```http
 POST /api/chat/session
-Response: { "sessionId": "uuid" }
 ```
 
-**Send Message**
-```bash
+Response:
+```json
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "message": "Session created successfully"
+}
+```
+
+#### Send Message
+```http
 POST /api/chat/message
-Body: {
-  "sessionId": "uuid",
-  "message": "What's the latest in AI?"
-}
-Response: {
-  "sessionId": "uuid",
-  "response": "...",
-  "sources": [...],
-  "timestamp": "..."
+Content-Type: application/json
+
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "message": "What's new in AI?"
 }
 ```
 
-**Get History**
-```bash
+Response:
+```json
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "response": "Based on recent articles...",
+  "sources": [
+    {
+      "title": "Article Title",
+      "url": "https://example.com",
+      "score": 0.92
+    }
+  ],
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+#### Get History
+```http
 GET /api/chat/history/:sessionId
-Response: {
-  "sessionId": "uuid",
-  "history": [...]
+```
+
+Response:
+```json
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "history": [
+    {
+      "role": "user",
+      "content": "What's new in AI?",
+      "timestamp": "2024-01-15T10:30:00.000Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Based on recent articles...",
+      "timestamp": "2024-01-15T10:30:05.000Z"
+    }
+  ]
 }
 ```
 
-**Clear Session**
-```bash
+#### Clear Session
+```http
 DELETE /api/chat/session/:sessionId
-Response: {
-  "message": "Session cleared successfully"
+```
+
+Response:
+```json
+{
+  "message": "Session cleared successfully",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-**Get All Sessions**
-```bash
+#### List Sessions
+```http
 GET /api/chat/sessions
-Response: {
-  "sessions": ["uuid1", "uuid2"],
+```
+
+Response:
+```json
+{
+  "sessions": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+  ],
   "count": 2
 }
 ```
 
 ### Socket.io Events
 
-**Connect & Join Session**
+#### Client → Server
+
+**Join Session:**
 ```javascript
-const socket = io('http://localhost:3000');
-socket.emit('join-session', sessionId);
-```
-
-**Send Message (Streaming)**
-```javascript
-socket.emit('send-message', {
-  sessionId: 'uuid',
-  message: 'What is happening in tech?'
-});
-
-socket.on('message-received', (data) => {
-  console.log('Processing...');
-});
-
-socket.on('response-chunk', (data) => {
-  console.log(data.chunk); // Stream tokens
-});
-
-socket.on('response-complete', (data) => {
-  console.log('Full response:', data.response);
-});
-```
-
-**Get History**
-```javascript
-socket.emit('get-history', { sessionId: 'uuid' });
-socket.on('history', (data) => {
-  console.log(data.history);
-});
-```
-
-**Clear Session**
-```javascript
-socket.emit('clear-session', { sessionId: 'uuid' });
-socket.on('session-cleared', (data) => {
-  console.log('Session cleared');
-});
-```
-
-## Caching Strategy
-
-### Redis Configuration
-
-**Session Cache:**
-- **TTL**: 3600s (1 hour, configurable)
-- **Key pattern**: `session:{sessionId}`
-- **Warming**: Sessions created on first message
-- **Eviction**: Automatic after TTL expires
-
-**Embedding Cache:**
-- **TTL**: 86400s (24 hours)
-- **Key pattern**: `embedding:{base64(text)}`
-- **Purpose**: Avoid redundant API calls
-- **Invalidation**: Automatic expiry
-
-### Cache Warming
-
-To pre-warm cache with common queries:
-
-```javascript
-// Add to src/scripts/warmCache.js
-const commonQueries = [
-  "What's new in AI?",
-  "Latest tech news",
-  "Current technology trends"
-];
-
-for (const query of commonQueries) {
-  await embeddingService.generateEmbedding(query);
-}
-```
-
-### TTL Configuration
-
-In `.env`:
-```env
-SESSION_TTL=3600        # Session cache (1 hour)
-EMBEDDING_CACHE_TTL=86400  # Embedding cache (24 hours)
-```
-
-Extend session on activity:
-```javascript
-await redisClient.extendSessionTTL(sessionId, 3600);
-```
-
-## Performance Optimizations
-
-1. **Connection Pooling**: PostgreSQL pool with 10 connections
-2. **Batch Embeddings**: Process 10 documents at once
-3. **Redis Pipelining**: Multiple operations in single roundtrip
-4. **Vector Search**: Cosine similarity with HNSW index
-5. **Content Chunking**: 500 char chunks for better retrieval
-
-## Testing
-
-**Health Check:**
-```bash
-curl http://localhost:3000/health
+socket.emit('join-session', sessionId)
 ```
 
 **Send Message:**
-```bash
-curl -X POST http://localhost:3000/api/chat/message \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sessionId": "test-123",
-    "message": "What is the latest news?"
-  }'
+```javascript
+socket.emit('send-message', {
+  sessionId: 'uuid',
+  message: 'Your question'
+})
 ```
 
 **Get History:**
-```bash
-curl http://localhost:3000/api/chat/history/test-123
+```javascript
+socket.emit('get-history', {
+  sessionId: 'uuid'
+})
 ```
 
 **Clear Session:**
+```javascript
+socket.emit('clear-session', {
+  sessionId: 'uuid'
+})
+```
+
+#### Server → Client
+
+**Message Received:**
+```javascript
+socket.on('message-received', (data) => {
+  // { sessionId: 'uuid' }
+})
+```
+
+**Response Chunk (Streaming):**
+```javascript
+socket.on('response-chunk', (data) => {
+  // { chunk: 'text', sessionId: 'uuid' }
+})
+```
+
+**Response Complete:**
+```javascript
+socket.on('response-complete', (data) => {
+  // { sessionId, response, timestamp }
+})
+```
+
+**History:**
+```javascript
+socket.on('history', (data) => {
+  // { sessionId, history: [...] }
+})
+```
+
+**Session Cleared:**
+```javascript
+socket.on('session-cleared', (data) => {
+  // { sessionId: 'uuid' }
+})
+```
+
+**Error:**
+```javascript
+socket.on('error', (error) => {
+  // { error: 'message' }
+})
+```
+
+---
+
+## 🔧 Services
+
+### RAG Service (`ragService.js`)
+
+**Purpose:** Orchestrates the RAG pipeline
+
+**Methods:**
+- `processQuery(sessionId, query)` - Process query with RAG
+- `processQueryStream(sessionId, query)` - Stream response
+- `getSessionHistory(sessionId)` - Get conversation history
+- `clearSession(sessionId)` - Clear session data
+- `getAllSessions()` - List all sessions
+
+**Flow:**
+1. Generate query embedding
+2. Search vector store (top-K)
+3. Retrieve conversation history
+4. Generate response with LLM
+5. Update session cache
+6. Persist to database (optional)
+
+### LLM Service (`llmService.js`)
+
+**Purpose:** Interface with Google Gemini API
+
+**Methods:**
+- `generateResponse(query, context, history)` - Generate response
+- `generateStreamResponse(query, context, history)` - Stream response
+
+**Features:**
+- Context injection from vector search
+- Conversation history management
+- Streaming token generation
+- Error handling
+
+### Embedding Service (`embeddingService.js`)
+
+**Purpose:** Generate text embeddings via Jina API
+
+**Methods:**
+- `generateEmbedding(text)` - Single embedding
+- `generateBatchEmbeddings(texts)` - Batch embeddings
+
+**Features:**
+- Embedding caching (24hr TTL)
+- Batch processing (10 texts/batch)
+- Error handling
+
+---
+
+## 🗄 Database Clients
+
+### Redis (`redis.js`)
+
+**Purpose:** Session caching
+
+**Methods:**
+- `setSession(sessionId, messages, ttl)` - Cache session
+- `getSession(sessionId)` - Retrieve session
+- `deleteSession(sessionId)` - Clear session
+- `extendSessionTTL(sessionId, ttl)` - Extend TTL
+- `cacheEmbedding(text, embedding, ttl)` - Cache embedding
+- `getCachedEmbedding(text)` - Get cached embedding
+
+**Key Patterns:**
+- `session:{sessionId}` - Session data
+- `embedding:{base64(text)}` - Cached embeddings
+
+### Qdrant (`vectorStore.js`)
+
+**Purpose:** Vector database for semantic search
+
+**Methods:**
+- `initialize()` - Create collection
+- `upsertDocuments(documents)` - Store embeddings
+- `search(queryEmbedding, topK)` - Semantic search
+- `deleteCollection()` - Delete collection
+- `getCollectionInfo()` - Get collection stats
+
+**Schema:**
+```javascript
+{
+  id: number,
+  vector: [768 dimensions],
+  payload: {
+    text: string,
+    source: string,
+    title: string,
+    url: string,
+    timestamp: string
+  }
+}
+```
+
+### PostgreSQL (`postgres.js`)
+
+**Purpose:** Optional persistent storage
+
+**Methods:**
+- `initialize()` - Create tables
+- `saveSession(sessionId)` - Save session
+- `saveMessage(sessionId, role, content)` - Save message
+- `getSessionHistory(sessionId)` - Get history
+- `deleteSession(sessionId)` - Delete session
+
+**Schema:**
+```sql
+CREATE TABLE chat_sessions (
+  id SERIAL PRIMARY KEY,
+  session_id VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE chat_messages (
+  id SERIAL PRIMARY KEY,
+  session_id VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL,
+  content TEXT NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
+);
+```
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `PORT` | number | 3000 | Server port |
+| `NODE_ENV` | string | development | Environment |
+| `REDIS_HOST` | string | localhost | Redis host |
+| `REDIS_PORT` | number | 6379 | Redis port |
+| `REDIS_PASSWORD` | string | - | Redis password |
+| `SESSION_TTL` | number | 3600 | Session cache TTL (seconds) |
+| `QDRANT_URL` | string | http://localhost:6333 | Qdrant URL |
+| `QDRANT_COLLECTION` | string | news_embeddings | Collection name |
+| `JINA_API_KEY` | string | - | Jina API key |
+| `JINA_MODEL` | string | jina-embeddings-v2-base-en | Embedding model |
+| `GEMINI_API_KEY` | string | - | Gemini API key |
+| `GEMINI_MODEL` | string | gemini-1.5-flash | LLM model |
+| `DB_ENABLED` | boolean | false | Enable PostgreSQL |
+| `DB_HOST` | string | localhost | Database host |
+| `DB_PORT` | number | 5432 | Database port |
+| `DB_NAME` | string | rag_chat | Database name |
+| `DB_USER` | string | postgres | Database user |
+| `DB_PASSWORD` | string | postgres | Database password |
+| `TOP_K_RESULTS` | number | 5 | Vector search results |
+| `MAX_CONTEXT_LENGTH` | number | 4000 | Max context chars |
+
+---
+
+## 📜 Scripts
+
+### Development
+
 ```bash
-curl -X DELETE http://localhost:3000/api/chat/session/test-123
+# Start dev server (with nodemon)
+npm run dev
+
+# Start production server
+npm start
+
+# Ingest news data
+npm run ingest
 ```
 
-## Project Structure
+### Testing
 
-```
-src/
-├── config/          # Environment configuration
-├── controllers/     # Request handlers
-├── database/        # Redis, Qdrant, PostgreSQL clients
-├── services/        # Business logic (RAG, embeddings, LLM)
-├── routes/          # API routes
-├── sockets/         # Socket.io handlers
-├── middleware/      # Error handling
-├── scripts/         # Ingestion scripts
-└── server.js        # Entry point
-```
-
-## System Design Principles
-
-✅ **Separation of Concerns**: Controllers → Services → Database
-✅ **Dependency Injection**: Shared service instances
-✅ **Error Handling**: Centralized middleware
-✅ **Configuration Management**: Environment-based config
-✅ **Graceful Shutdown**: Clean resource cleanup
-✅ **Logging**: Structured console logs
-✅ **Type Safety**: ES6 modules with proper imports
-
-## Production Considerations
-
-1. **Rate Limiting**: Add `express-rate-limit`
-2. **Authentication**: Add JWT middleware
-3. **Monitoring**: Add Prometheus metrics
-4. **Logging**: Use Winston/Pino
-5. **Clustering**: PM2 for multi-core
-6. **Nginx**: Reverse proxy with load balancing
-7. **HTTPS**: SSL certificates
-8. **Environment**: Use separate .env per environment
-
-## Troubleshooting
-
-**Redis connection failed:**
 ```bash
-docker ps  # Check if Redis is running
-docker logs <container_id>
+# Test REST API
+chmod +x test-api.sh
+./test-api.sh
+
+# Test Socket.io
+node test-socket.js
 ```
 
-**Qdrant collection not found:**
+### Data Management
+
 ```bash
-npm run ingest  # Re-run ingestion
+# Check Qdrant collection
+curl http://localhost:6333/collections/news_embeddings
+
+# Check Redis keys
+docker exec -it <redis-container> redis-cli KEYS "*"
+
+# Re-ingest data
+npm run ingest
 ```
 
-**Embedding API errors:**
-- Check Jina API key validity
-- Verify API rate limits
-- Check network connectivity
+---
 
-**Database connection issues:**
-- Verify PostgreSQL credentials
-- Check if DB exists
-- Test connection manually
+## 🔍 Troubleshooting
 
-## License
+### Redis Connection Error
+
+```bash
+# Check Redis is running
+docker ps | grep redis
+
+# Test connection
+redis-cli ping
+
+# Restart Redis
+docker compose -f docker-compose.dev.yml restart redis
+```
+
+### Qdrant Connection Error
+
+```bash
+# Check Qdrant
+curl http://localhost:6333
+
+# View collections
+curl http://localhost:6333/collections
+
+# Restart Qdrant
+docker compose -f docker-compose.dev.yml restart qdrant
+```
+
+### Gemini API Error
+
+Common issues:
+- Invalid API key → Check `.env`
+- Wrong model name → Use `gemini-1.5-flash` or `gemini-1.5-pro`
+- Rate limit → Wait or upgrade plan
+- Network error → Check internet connection
+
+### Jina API Error
+
+Common issues:
+- Invalid API key → Check `.env`
+- Rate limit (60/min) → Implement backoff
+- Network error → Check connection
+
+### No Embeddings Found
+
+```bash
+# Check collection exists
+curl http://localhost:6333/collections/news_embeddings
+
+# Check vector count
+curl http://localhost:6333/collections/news_embeddings | jq '.result.vectors_count'
+
+# Re-ingest if count is 0
+npm run ingest
+```
+
+---
+
+## 🚀 Performance Optimization
+
+### Caching Strategy
+
+**Session Cache:**
+- TTL: 1 hour (configurable)
+- Auto-extends on activity
+- Cleared on explicit delete
+
+**Embedding Cache:**
+- TTL: 24 hours
+- Reduces API calls by ~80%
+- Base64 text key
+
+### Connection Pooling
+
+- PostgreSQL: 10 connections
+- Redis: Persistent connection with retry
+- Qdrant: HTTP client with keep-alive
+
+### Batch Processing
+
+- Embeddings: 10 texts per batch
+- Vector upsert: Bulk insert
+- RSS feeds: Parallel fetching
+
+---
+
+## 📊 Monitoring
+
+### Health Checks
+
+```bash
+# Server health
+curl http://localhost:3000/health
+
+# Redis health
+docker exec <redis-container> redis-cli ping
+
+# Qdrant health
+curl http://localhost:6333/collections
+```
+
+### Logs
+
+```bash
+# View server logs
+npm run dev
+
+# Docker logs
+docker compose logs -f backend
+```
+
+---
+
+## 📝 License
 
 MIT

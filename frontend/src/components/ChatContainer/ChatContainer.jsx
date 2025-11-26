@@ -166,7 +166,9 @@ const ChatContainer = () => {
         {messages.length === 0 && !isTyping ? (
           <div className="chat-container__empty">
             <div className="chat-container__empty-icon">◆</div>
-            <h2 className="chat-container__empty-title">Welcome to NewVoosh</h2>
+            <h2 className="chat-container__empty-title">
+              Welcome to NewsVoosh
+            </h2>
             <p className="chat-container__empty-subtitle">
               Ask me anything about recent news and technology. I have access to
               the latest articles and can provide informed answers.
