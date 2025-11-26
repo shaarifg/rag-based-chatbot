@@ -836,7 +836,7 @@ for await (const chunk of llmService.generateStreamResponse(
 
 ```
 Request:
-  Model: gemini-1.5-flash
+  Model: gemini-2.5-flash
   Prompt: [systemPrompt with context]
   Stream: true
 
@@ -1422,7 +1422,7 @@ const exportChat = () => {
 
 ```javascript
 try {
-  return await gemini.generate({ model: "gemini-1.5-flash" });
+  return await gemini.generate({ model: "gemini-2.5-flash" });
 } catch (error) {
   if (error.code === "RATE_LIMIT") {
     return await gemini.generate({ model: "gemini-1.5-pro" });

@@ -46,7 +46,7 @@ jobs:
           JINA_API_KEY=${{ secrets.JINA_API_KEY }}
           JINA_MODEL=jina-embeddings-v2-base-en
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL=gemini-1.5-flash
+          GEMINI_MODEL=gemini-2.5-flash
           DB_ENABLED=false
           SESSION_TTL=3600
           TOP_K_RESULTS=5

@@ -333,7 +333,7 @@ See [deployment guide](./.github/workflows/deploy.yml) for automated CI/CD setup
 | `GEMINI_API_KEY` | Google Gemini API key   | ✅ Yes   | -                     |
 | `REDIS_HOST`     | Redis hostname          | No       | localhost             |
 | `QDRANT_URL`     | Qdrant URL              | No       | http://localhost:6333 |
-| `GEMINI_MODEL`   | Gemini model name       | No       | gemini-1.5-flash      |
+| `GEMINI_MODEL`   | Gemini model name       | No       | gemini-2.5-flash      |
 | `PORT`           | Backend port            | No       | 3000                  |
 
 ### Frontend Environment Variables
