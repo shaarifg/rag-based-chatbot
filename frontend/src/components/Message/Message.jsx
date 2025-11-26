@@ -26,7 +26,7 @@ const Message = ({ message, isTyping }) => {
           </div>
         ) : (
           <>
-            <div className="message__text">
+            <div className="message__markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {message.content}
               </ReactMarkdown>

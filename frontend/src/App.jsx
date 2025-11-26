@@ -1,8 +1,13 @@
 import React from 'react';
+import { ThemeProvider } from '@/context/ThemeContext';
 import ChatContainer from '@/components/ChatContainer/ChatContainer';
 
 function App() {
-  return <ChatContainer />;
+  return (
+    <ThemeProvider>
+      <ChatContainer />
+    </ThemeProvider>
+  );
 }
 
 export default App;

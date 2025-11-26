@@ -1,31 +1,36 @@
 .chat-input {
   display: flex;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 20px 24px;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  box-shadow: 0 -2px 8px var(--shadow-light);
   transition: all 0.3s ease;
+
+  &__wrapper {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: var(--accent-primary);
+    }
+  }
 
   &__field {
     flex: 1;
-    background: var(--bg-primary);
-    border: 2px solid var(--border-color);
+    background: transparent;
+    border: none;
     color: var(--text-primary);
-    padding: 12px 16px;
+    padding: 14px 16px;
     font-family: inherit;
     font-size: 14px;
-    border-radius: 8px;
     outline: none;
-    transition: all 0.2s ease;
-
-    &:focus {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-    }
 
     &::placeholder {
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
 
     &:disabled {
@@ -35,39 +40,21 @@
   }
 
   &__button {
-    padding: 12px 24px;
+    padding: 14px 24px;
+    background: var(--accent-primary);
+    color: white;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
     font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 
-    &.send {
-      background: var(--accent-blue);
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: #3a7bc8;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-      }
-    }
-
-    &.reset {
-      background: transparent;
-      color: var(--accent-orange);
-      border: 2px solid var(--accent-orange);
-
-      &:hover:not(:disabled) {
-        background: var(--accent-orange);
-        color: white;
-        transform: translateY(-1px);
-      }
+    &:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
     }
 
     &:active:not(:disabled) {
@@ -78,5 +65,23 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    &.secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+
+      &:hover:not(:disabled) {
+        background: var(--bg-paper);
+        color: var(--text-primary);
+        border-color: var(--text-secondary);
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
   }
 }

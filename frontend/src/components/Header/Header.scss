@@ -2,7 +2,7 @@
   padding: 16px 24px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px var(--shadow-light);
+  position: relative;
   transition: all 0.3s ease;
 
   &__content {
@@ -22,33 +22,24 @@
   &__title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--accent-orange);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
+    letter-spacing: -0.5px;
+
+    &-icon {
+      color: var(--accent-primary);
+      font-size: 24px;
+    }
   }
 
-  &__status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
-    padding: 4px 12px;
-    background: var(--bg-primary);
-    border-radius: 12px;
-
-    &-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent-blue);
-      animation: pulse 2s infinite;
-
-      &.disconnected {
-        background: var(--accent-orange);
-      }
-    }
+  &__session {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   &__right {
@@ -57,29 +48,50 @@
     gap: 16px;
   }
 
-  &__theme-toggle {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 18px;
+  &__status {
     display: flex;
     align-items: center;
-    gap: 4px;
-    transition: all 0.2s ease;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
 
-    &:hover {
-      background: var(--accent-blue);
-      color: white;
-      border-color: var(--accent-blue);
+    &-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-secondary);
+      animation: pulse 2s infinite;
+
+      &.disconnected {
+        background: #dc3545;
+        animation: none;
+      }
     }
   }
 
-  &__info {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 4px;
+  &__theme-toggle {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-paper);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 18px;
+
+    &:hover {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
   }
 }
 
