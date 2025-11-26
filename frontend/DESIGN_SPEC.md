@@ -30,7 +30,7 @@
 ┌─────────────────────────────────────────────────────┐
 │  HEADER (Fixed Top)                                 │
 │  ┌─────────────────────────────────────────┐       │
-│  │ ◆ RAG CHAT            [●] CONNECTED     │       │
+│  │ ◆ NEWVOOSH            [●] CONNECTED     │       │
 │  │ Session: 550e8400...                    │       │
 │  └─────────────────────────────────────────┘       │
 ├─────────────────────────────────────────────────────┤
@@ -96,7 +96,7 @@ background-image: repeating-linear-gradient(0deg, ...),
 
 **Elements**:
 
-- Title with diamond symbol: `◆ RAG CHAT`
+- Title with diamond symbol: `◆ NEWVOOSH`
 - Status indicator: Pulsing dot
 - Session ID (first 8 chars)
 

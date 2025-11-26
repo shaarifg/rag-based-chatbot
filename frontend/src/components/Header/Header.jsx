@@ -1,6 +1,6 @@
-import React from 'react';
-import { useTheme } from '@/context/ThemeContext';
-import './Header.scss';
+import React from "react";
+import { useTheme } from "@/context/ThemeContext";
+import "./Header.scss";
 
 const Header = ({ connected, sessionId }) => {
   const { theme, toggleTheme } = useTheme();
@@ -11,7 +11,7 @@ const Header = ({ connected, sessionId }) => {
         <div className="header__left">
           <h1 className="header__title">
             <span className="header__title-icon">◆</span>
-            RAG Chat
+            NewVoosh
           </h1>
           {sessionId && (
             <span className="header__session">
@@ -22,16 +22,18 @@ const Header = ({ connected, sessionId }) => {
         <div className="header__right">
           <div className="header__status">
             <div
-              className={`header__status-dot ${!connected ? 'disconnected' : ''}`}
+              className={`header__status-dot ${
+                !connected ? "disconnected" : ""
+              }`}
             ></div>
-            <span>{connected ? 'Connected' : 'Disconnected'}</span>
+            <span>{connected ? "Connected" : "Disconnected"}</span>
           </div>
           <button
             className="header__theme-toggle"
             onClick={toggleTheme}
             aria-label="Toggle theme"
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
         </div>
       </div>

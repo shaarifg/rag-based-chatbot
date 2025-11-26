@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import socketService from '@/services/socketService';
-import Header from '@/components/Header/Header';
-import Message from '@/components/Message/Message';
-import ChatInput from '@/components/ChatInput/ChatInput';
-import Loader from '@/components/Loader/Loader';
-import './ChatContainer.scss';
+import React, { useEffect, useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import socketService from "@/services/socketService";
+import Header from "@/components/Header/Header";
+import Message from "@/components/Message/Message";
+import ChatInput from "@/components/ChatInput/ChatInput";
+import Loader from "@/components/Loader/Loader";
+import "./ChatContainer.scss";
 
 const SUGGESTIONS = [
-  'What are the latest developments in AI?',
-  'Tell me about recent technology news',
-  'What is happening in the tech industry?',
-  'Latest trends in machine learning',
+  "What are the latest developments in AI?",
+  "Tell me about recent technology news",
+  "What is happening in the tech industry?",
+  "Latest trends in machine learning",
 ];
 
 const ChatContainer = () => {
@@ -19,7 +19,7 @@ const ChatContainer = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [connected, setConnected] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [currentResponse, setCurrentResponse] = useState('');
+  const [currentResponse, setCurrentResponse] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
@@ -27,11 +27,11 @@ const ChatContainer = () => {
     const initializeChat = async () => {
       try {
         // Generate or retrieve session ID
-        const storedSessionId = localStorage.getItem('sessionId');
+        const storedSessionId = localStorage.getItem("sessionId");
         const newSessionId = storedSessionId || uuidv4();
 
         if (!storedSessionId) {
-          localStorage.setItem('sessionId', newSessionId);
+          localStorage.setItem("sessionId", newSessionId);
         }
 
         setSessionId(newSessionId);
@@ -70,7 +70,7 @@ const ChatContainer = () => {
           setIsLoading(false);
         }, 2000);
       } catch (error) {
-        console.error('Initialization error:', error);
+        console.error("Initialization error:", error);
         setIsLoading(false);
       }
     };
@@ -88,19 +88,19 @@ const ChatContainer = () => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, currentResponse]);
 
   const handleSend = (message) => {
     const userMessage = {
-      role: 'user',
+      role: "user",
       content: message,
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
-    setCurrentResponse('');
+    setCurrentResponse("");
 
     socketService.sendMessage(
       message,
@@ -109,39 +109,42 @@ const ChatContainer = () => {
       },
       (data) => {
         const assistantMessage = {
-          role: 'assistant',
+          role: "assistant",
           content: data.response,
           timestamp: data.timestamp,
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        setCurrentResponse('');
+        setCurrentResponse("");
         setIsTyping(false);
       },
       (error) => {
-        console.error('Send error:', error);
+        console.error("Send error:", error);
         const errorMessage = {
-          role: 'assistant',
-          content: `❌ Error: ${error || 'Failed to generate response. Please check backend connection.'}`,
+          role: "assistant",
+          content: `❌ Error: ${
+            error ||
+            "Failed to generate response. Please check backend connection."
+          }`,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, errorMessage]);
         setIsTyping(false);
-        setCurrentResponse('');
+        setCurrentResponse("");
       }
     );
   };
 
   const handleReset = () => {
-    if (!window.confirm('Reset session and clear all messages?')) return;
+    if (!window.confirm("Reset session and clear all messages?")) return;
 
     socketService.clearSession(() => {
       setMessages([]);
-      setCurrentResponse('');
+      setCurrentResponse("");
       setIsTyping(false);
 
       // Generate new session
       const newSessionId = uuidv4();
-      localStorage.setItem('sessionId', newSessionId);
+      localStorage.setItem("sessionId", newSessionId);
       setSessionId(newSessionId);
       socketService.joinSession(newSessionId);
     });
@@ -163,7 +166,7 @@ const ChatContainer = () => {
         {messages.length === 0 && !isTyping ? (
           <div className="chat-container__empty">
             <div className="chat-container__empty-icon">◆</div>
-            <h2 className="chat-container__empty-title">Welcome to RAG Chat</h2>
+            <h2 className="chat-container__empty-title">Welcome to NewVoosh</h2>
             <p className="chat-container__empty-subtitle">
               Ask me anything about recent news and technology. I have access to
               the latest articles and can provide informed answers.
@@ -188,7 +191,7 @@ const ChatContainer = () => {
             {isTyping && currentResponse && (
               <Message
                 message={{
-                  role: 'assistant',
+                  role: "assistant",
                   content: currentResponse,
                   timestamp: new Date().toISOString(),
                 }}
@@ -196,7 +199,7 @@ const ChatContainer = () => {
             )}
             {isTyping && !currentResponse && (
               <Message
-                message={{ role: 'assistant', content: '' }}
+                message={{ role: "assistant", content: "" }}
                 isTyping={true}
               />
             )}
@@ -205,7 +208,11 @@ const ChatContainer = () => {
         )}
       </div>
 
-      <ChatInput onSend={handleSend} onReset={handleReset} disabled={isTyping} />
+      <ChatInput
+        onSend={handleSend}
+        onReset={handleReset}
+        disabled={isTyping}
+      />
     </div>
   );
 };
