@@ -23,6 +23,8 @@ jobs:
       - name: Deploy to VM
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} bash << 'ENDSSH'
+            set -e
+            
             cd /home/${{ secrets.VM_USER }}/rag-chat || mkdir -p /home/${{ secrets.VM_USER }}/rag-chat
             cd /home/${{ secrets.VM_USER }}/rag-chat
             
@@ -34,7 +36,7 @@ jobs:
             fi
             
             echo "⚙️  Creating backend .env..."
-            cat > backend/.env << 'ENVFILE'
+            cat > backend/.env << 'ENVEOF'
           PORT=3000
           NODE_ENV=production
           REDIS_HOST=redis
@@ -49,72 +51,151 @@ jobs:
           SESSION_TTL=3600
           TOP_K_RESULTS=5
           MAX_CONTEXT_LENGTH=4000
-          ENVFILE
+          ENVEOF
             
             echo "⚙️  Creating frontend .env..."
-            cat > frontend/.env << ENVFILE
+            cat > frontend/.env << ENVEOF
           VITE_API_URL=http://${{ secrets.VM_HOST }}/backend
           VITE_SOCKET_URL=http://${{ secrets.VM_HOST }}
-          ENVFILE
+          ENVEOF
             
-            echo "🔄 Ensuring Redis and Qdrant are running..."
-            docker compose up -d redis qdrant
+            echo "📋 Verifying .env files created..."
+            ls -la backend/.env frontend/.env
             
-            echo "🛑 Stopping backend and frontend..."
-            docker compose stop backend frontend 2>/dev/null || true
+            echo "🔄 Starting Redis and Qdrant..."
+            docker compose -f docker-compose.yml up -d redis qdrant
             
-            echo "🔨 Building backend and frontend..."
-            docker compose build backend frontend
+            echo "🛑 Stopping old backend and frontend containers..."
+            docker compose -f docker-compose.yml stop backend frontend 2>/dev/null || true
+            docker compose -f docker-compose.yml rm -f backend frontend 2>/dev/null || true
             
-            echo "🚀 Starting backend and frontend..."
-            docker compose up -d backend frontend
+            echo "🔨 Building backend..."
+            docker compose -f docker-compose.yml build backend
             
-            echo "⏳ Waiting for services..."
-            sleep 20
+            echo "🔨 Building frontend..."
+            docker compose -f docker-compose.yml build frontend
             
-            echo "🔍 Checking for existing data..."
-            DATA_CHECK=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
+            echo "🚀 Starting backend..."
+            docker compose -f docker-compose.yml up -d backend
             
-            if [ "$DATA_CHECK" -eq "0" ]; then
-              echo "📦 Running ingestion..."
-              docker compose exec -T backend node src/scripts/ingestNews.js
-              echo "✅ Ingestion complete"
-            else
-              echo "✅ Data exists - Skipping ingestion"
-            fi
+            echo "⏳ Waiting 10 seconds for backend..."
+            sleep 10
             
-            echo "🧹 Cleanup..."
-            docker image prune -f
+            echo "🚀 Starting frontend..."
+            docker compose -f docker-compose.yml up -d frontend
+            
+            echo "⏳ Waiting 10 seconds for frontend..."
+            sleep 10
             
             echo "📊 Container Status:"
-            docker compose ps
+            docker ps -a
             
             echo ""
-            echo "📝 Backend logs (last 10 lines):"
-            docker compose logs --tail=10 backend
+            echo "📝 Backend logs:"
+            docker compose -f docker-compose.yml logs --tail=30 backend
+            
+            echo ""
+            echo "📝 Frontend logs:"
+            docker compose -f docker-compose.yml logs --tail=30 frontend
+            
+            echo ""
+            echo "🔍 Checking for data in Qdrant..."
+            DATA_CHECK=$(docker compose -f docker-compose.yml exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
+            
+            if [ "$DATA_CHECK" -eq "0" ]; then
+              echo "📦 No data found - Running ingestion..."
+              docker compose -f docker-compose.yml exec -T backend node src/scripts/ingestNews.js
+              echo "✅ Ingestion complete"
+            else
+              echo "✅ Data already exists (skipping ingestion)"
+            fi
+            
+            echo ""
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+            
+            echo ""
+            echo "✅ Deployment complete!"
+            docker compose -f docker-compose.yml ps
           ENDSSH
 
       - name: Verify Deployment
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+            cd /home/${{ secrets.VM_USER }}/rag-chat
+            
             echo "========================================="
             echo "🏥 HEALTH CHECKS"
             echo "========================================="
             
-            cd /home/${{ secrets.VM_USER }}/rag-chat
+            echo ""
+            echo "📦 Running Containers:"
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
             
             echo ""
-            echo "📦 All Containers:"
-            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo "🔧 Backend Health Check:"
+            if curl -f -s http://localhost:3000/health > /dev/null 2>&1; then
+              echo "✅ Backend is HEALTHY"
+              curl -s http://localhost:3000/health
+            else
+              echo "❌ Backend health check FAILED"
+              echo "Recent backend logs:"
+              docker compose -f docker-compose.yml logs --tail=50 backend
+            fi
             
             echo ""
-            echo "🔧 Backend Health:"
-            curl -f -s http://localhost:3000/health && echo "✅ Backend OK" || echo "❌ Backend FAILED"
+            echo "🎨 Frontend Health Check:"
+            if curl -f -s http://localhost:8080 > /dev/null 2>&1; then
+              echo "✅ Frontend is HEALTHY"
+            else
+              echo "❌ Frontend health check FAILED"
+              echo "Recent frontend logs:"
+              docker compose -f docker-compose.yml logs --tail=50 frontend
+            fi
             
             echo ""
-            echo "🎨 Frontend Health:"
-            curl -f -s http://localhost:8080 && echo "✅ Frontend OK" || echo "❌ Frontend FAILED"
+            echo "🗄️  Qdrant Collection Info:"
+            curl -s http://localhost:6333/collections/news_embeddings 2>/dev/null | grep -o '"vectors_count":[0-9]*' || echo "No data yet"
+            
+            echo ""
+            echo "💾 Redis Status:"
+            docker compose -f docker-compose.yml exec -T redis redis-cli ping || echo "Redis not responding"
             
             echo ""
             echo "========================================="
+            echo "🌐 PUBLIC URLS:"
+            echo "Frontend: http://${{ secrets.VM_HOST }}/chatbot"
+            echo "Backend:  http://${{ secrets.VM_HOST }}/backend/health"
+            echo "========================================="
+          ENDSSH
+
+      - name: Show Logs on Failure
+        if: failure()
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+            cd /home/${{ secrets.VM_USER }}/rag-chat
+            
+            echo "========================================="
+            echo "❌ DEPLOYMENT FAILED - SHOWING LOGS"
+            echo "========================================="
+            
+            echo ""
+            echo "📦 All Containers (including stopped):"
+            docker ps -a
+            
+            echo ""
+            echo "📝 Backend Logs (last 100 lines):"
+            docker compose -f docker-compose.yml logs --tail=100 backend
+            
+            echo ""
+            echo "📝 Frontend Logs (last 100 lines):"
+            docker compose -f docker-compose.yml logs --tail=100 frontend
+            
+            echo ""
+            echo "🔍 Backend .env file:"
+            cat backend/.env
+            
+            echo ""
+            echo "🔍 Frontend .env file:"
+            cat frontend/.env
           ENDSSH
