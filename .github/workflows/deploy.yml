@@ -21,22 +21,21 @@ jobs:
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to VM
+        env:
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VM_IP: ${{ secrets.VM_HOST }}
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
-            set -e
-            
             cd /home/${{ secrets.VM_USER }}/rag-chat || mkdir -p /home/${{ secrets.VM_USER }}/rag-chat
             cd /home/${{ secrets.VM_USER }}/rag-chat
             
-            echo "📥 Syncing latest code..."
+            # Pull latest code
             if [ -d .git ]; then
-              git fetch --all
-              git reset --hard origin/main
+              git pull origin main
             else
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
-            
-            echo "⚙️  Creating environment files..."
             
             # Create backend .env
             cat > backend/.env << 'ENVFILE'
@@ -49,119 +48,60 @@ jobs:
           JINA_API_KEY=${{ secrets.JINA_API_KEY }}
           JINA_MODEL=jina-embeddings-v2-base-en
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL=gemini-1.5-flash
+          GEMINI_MODEL=gemini-2.5-flash
           DB_ENABLED=false
           SESSION_TTL=3600
           TOP_K_RESULTS=5
           MAX_CONTEXT_LENGTH=4000
           ENVFILE
             
-            # Create frontend .env
+            # Create frontend .env (BEFORE build)
             cat > frontend/.env << 'ENVFILE'
           VITE_API_URL=http://${{ secrets.VM_HOST }}/backend
           VITE_SOCKET_URL=http://${{ secrets.VM_HOST }}
           ENVFILE
             
-            echo "🛑 Stopping old containers..."
-            docker compose down
+            # Ensure Redis and Qdrant are running
+            docker compose up -d redis qdrant
             
-            echo "🧹 Cleaning old images..."
-            docker compose rm -f backend frontend 2>/dev/null || true
-            docker rmi rag-chat-backend rag-chat-frontend 2>/dev/null || true
-            docker system prune -f
+            # Stop only backend and frontend
+            docker compose stop backend frontend
             
-            echo "🔨 Building fresh images..."
-            docker compose build --no-cache --pull backend frontend
+            # Build (frontend .env is now available)
+            docker compose build backend frontend
+            docker compose up -d backend frontend
             
-            echo "🚀 Starting all services..."
-            docker compose up -d
+            # Wait for backend
+            sleep 15
             
-            echo "⏳ Waiting for services to be ready..."
-            sleep 20
-            
+            # Check if data exists
             echo "🔍 Checking for existing data..."
             DATA_CHECK=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
             
             if [ "$DATA_CHECK" -eq "0" ]; then
-              echo "📦 No data found - Running ingestion (this takes ~1-2 minutes)..."
+              echo "📦 Running ingestion..."
               docker compose exec -T backend node src/scripts/ingestNews.js
               echo "✅ Ingestion complete"
             else
-              echo "✅ Data already exists - Skipping ingestion"
+              echo "✅ Data exists - Skipping ingestion"
             fi
             
-            echo "📊 Deployment Status:"
-            docker compose ps
+            # Cleanup
+            docker image prune -f
             
-            echo ""
-            echo "📝 Recent Backend Logs:"
-            docker compose logs --tail=20 backend
+            # Show status
+            docker compose ps
           ENDSSH
 
       - name: Verify Deployment
         run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
-            echo "========================================="
-            echo "🏥 HEALTH CHECKS"
-            echo "========================================="
-            
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            echo "=== Container Status ==="
+            docker ps
             echo ""
-            echo "📦 Container Status:"
-            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            
+            echo "=== Backend Health Check ==="
+            curl -f http://localhost:3000/health || echo "Backend not ready"
             echo ""
-            echo "🔧 Backend Health:"
-            if curl -f -s http://localhost:3000/health > /dev/null; then
-              echo "✅ Backend is healthy"
-              curl -s http://localhost:3000/health | head -1
-            else
-              echo "❌ Backend health check failed"
-              echo "Recent logs:"
-              docker compose logs --tail=30 backend
-            fi
-            
-            echo ""
-            echo "🎨 Frontend Health:"
-            if curl -f -s http://localhost:8080 > /dev/null; then
-              echo "✅ Frontend is healthy"
-            else
-              echo "❌ Frontend health check failed"
-              echo "Recent logs:"
-              docker compose logs --tail=30 frontend
-            fi
-            
-            echo ""
-            echo "🗄️  Qdrant Status:"
-            VECTORS=$(curl -s http://localhost:6333/collections/news_embeddings 2>/dev/null | grep -o '"vectors_count":[0-9]*' | grep -o '[0-9]*' || echo "0")
-            echo "Vectors indexed: $VECTORS"
-            
-            echo ""
-            echo "💾 Redis Status:"
-            docker compose exec -T redis redis-cli ping || echo "Redis not responding"
-            
-            echo ""
-            echo "========================================="
-            echo "✅ DEPLOYMENT COMPLETE"
-            echo "========================================="
-            echo "Frontend: http://${{ secrets.VM_HOST }}/chatbot"
-            echo "Backend API: http://${{ secrets.VM_HOST }}/backend/health"
-            echo "========================================="
-          ENDSSH
-
-      - name: Notify on Failure
-        if: failure()
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
-            echo "========================================="
-            echo "❌ DEPLOYMENT FAILED"
-            echo "========================================="
-            echo ""
-            echo "📝 Backend Logs:"
-            docker compose logs --tail=50 backend
-            echo ""
-            echo "📝 Frontend Logs:"
-            docker compose logs --tail=50 frontend
-            echo ""
-            echo "📦 Container Status:"
-            docker compose ps
-          ENDSSH
+            echo "=== Frontend Check ==="
+            curl -f http://localhost:8080 || echo "Frontend not ready"
+          EOF
