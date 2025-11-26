@@ -5,66 +5,107 @@
   animation: messageSlide 0.3s ease;
 
   &.user {
+    flex-direction: row-reverse;
+
+    .message__avatar {
+      background: var(--accent-orange);
+    }
+
     .message__content {
       background: var(--user-bg);
-      margin-left: auto;
+      border: 1px solid var(--border-color);
     }
   }
 
   &.assistant {
+    .message__avatar {
+      background: var(--accent-blue);
+    }
+
     .message__content {
       background: var(--bot-bg);
-      border-left: 2px solid var(--accent);
+      border: 1px solid var(--border-color);
     }
   }
 
   &__avatar {
-    width: 32px;
-    height: 32px;
-    background: var(--accent);
-    color: var(--bg-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 14px;
     flex-shrink: 0;
-    position: relative;
-
-    &::after {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      background: var(--accent);
-      opacity: 0.2;
-      z-index: -1;
-    }
+    box-shadow: 0 2px 8px var(--shadow-light);
   }
 
   &__content {
     max-width: 70%;
     padding: 12px 16px;
-    background: var(--user-bg);
-    position: relative;
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      background: linear-gradient(45deg, var(--accent), transparent);
-      opacity: 0.1;
-      pointer-events: none;
-    }
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow-light);
+    transition: all 0.2s ease;
   }
 
   &__text {
     font-size: 14px;
     line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
+    color: var(--text-primary);
+
+    p {
+      margin: 8px 0;
+    }
+
+    code {
+      background: var(--bg-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--accent-orange);
+    }
+
+    pre {
+      background: var(--bg-secondary);
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+
+      code {
+        background: none;
+        padding: 0;
+        color: var(--text-primary);
+      }
+    }
+
+    ul, ol {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    blockquote {
+      border-left: 3px solid var(--accent-blue);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-secondary);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin: 12px 0 8px;
+      color: var(--text-primary);
+    }
+
+    a {
+      color: var(--accent-blue);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   &__time {
@@ -80,9 +121,10 @@
     align-items: center;
 
     span {
-      width: 4px;
-      height: 4px;
-      background: var(--accent);
+      width: 8px;
+      height: 8px;
+      background: var(--accent-blue);
+      border-radius: 50%;
       display: block;
       animation: typing 1.4s infinite;
 

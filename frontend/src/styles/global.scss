@@ -5,72 +5,53 @@
 }
 
 :root {
+  /* Light theme (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6c757d;
+  --accent-orange: #ff6b35;
+  --accent-blue: #4a90e2;
+  --user-bg: #fff5f0;
+  --bot-bg: #f0f8ff;
+  --input-bg: #ffffff;
+  --border-color: #dee2e6;
+  --shadow-light: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] {
   --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
+  --bg-secondary: #1a1a1a;
   --text-primary: #e0e0e0;
   --text-secondary: #888888;
-  --accent: #00ff88;
-  --accent-dim: #00cc66;
+  --accent-orange: #ff6b35;
+  --accent-blue: #4a90e2;
   --user-bg: #1a1a1a;
   --bot-bg: #0f0f0f;
   --input-bg: #151515;
-  --sketch-primary: rgba(0, 255, 136, 0.15);
-  --sketch-secondary: rgba(255, 255, 255, 0.03);
+  --border-color: #333333;
+  --shadow-light: rgba(255, 255, 255, 0.05);
 }
 
 body {
-  font-family: 'Courier New', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
-  position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      var(--sketch-secondary) 2px,
-      var(--sketch-secondary) 4px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 2px,
-      var(--sketch-secondary) 2px,
-      var(--sketch-secondary) 4px
-    ),
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      var(--sketch-primary) 10px,
-      var(--sketch-primary) 11px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 10px,
-      var(--sketch-primary) 10px,
-      var(--sketch-primary) 11px
-    );
-  background-size: 100px 100px, 100px 100px, 200px 200px, 200px 200px;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.4;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #root {
   position: relative;
   z-index: 1;
+}
+
+code {
+  font-family: 'Courier New', monospace;
 }
 
 ::-webkit-scrollbar {
@@ -82,9 +63,11 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-dim);
+  background: var(--accent-blue);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--accent-orange);
 }
+

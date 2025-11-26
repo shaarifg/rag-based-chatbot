@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './Message.scss';
 
 const Message = ({ message, isTyping }) => {
@@ -24,7 +26,11 @@ const Message = ({ message, isTyping }) => {
           </div>
         ) : (
           <>
-            <div className="message__text">{message.content}</div>
+            <div className="message__text">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            </div>
             {message.timestamp && (
               <span className="message__time">
                 {formatTime(message.timestamp)}

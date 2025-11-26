@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import './ChatInput.scss';
+import React, { useState } from "react";
+import "./ChatInput.scss";
 
 const ChatInput = ({ onSend, onReset, disabled }) => {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!input.trim() || disabled) return;
 
     onSend(input.trim());
-    setInput('');
+    setInput("");
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
@@ -32,10 +32,10 @@ const ChatInput = ({ onSend, onReset, disabled }) => {
       />
       <button
         type="submit"
-        className="chat-input__button"
+        className="chat-input__button send"
         disabled={disabled || !input.trim()}
       >
-        SEND
+        Send
       </button>
       <button
         type="button"
@@ -43,7 +43,7 @@ const ChatInput = ({ onSend, onReset, disabled }) => {
         onClick={onReset}
         disabled={disabled}
       >
-        RESET
+        Reset
       </button>
     </form>
   );

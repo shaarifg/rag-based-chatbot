@@ -21,8 +21,12 @@ jobs:
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to VM
+        env:
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VM_IP: ${{ secrets.VM_HOST }}
         run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
             cd /home/${{ secrets.VM_USER }}/rag-chat || mkdir -p /home/${{ secrets.VM_USER }}/rag-chat
             cd /home/${{ secrets.VM_USER }}/rag-chat
             
@@ -33,60 +37,61 @@ jobs:
               git clone https://github.com/shaarifg/rag-based-chatbot.git .
             fi
             
-            # Ensure Redis and Qdrant are running (never stop these)
+            # Create backend .env
+            cat > backend/.env << 'ENVFILE'
+          PORT=3000
+          NODE_ENV=production
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          QDRANT_URL=http://qdrant:6333
+          QDRANT_COLLECTION=news_embeddings
+          JINA_API_KEY=$JINA_API_KEY
+          JINA_MODEL=jina-embeddings-v2-base-en
+          GEMINI_API_KEY=$GEMINI_API_KEY
+          GEMINI_MODEL=gemini-1.5-flash
+          DB_ENABLED=false
+          SESSION_TTL=3600
+          TOP_K_RESULTS=5
+          MAX_CONTEXT_LENGTH=4000
+          ENVFILE
+            
+            # Create frontend .env (BEFORE build)
+            cat > frontend/.env << 'ENVFILE'
+          VITE_API_URL=http://$VM_IP/backend
+          VITE_SOCKET_URL=http://$VM_IP
+          ENVFILE
+            
+            # Ensure Redis and Qdrant are running
             docker compose up -d redis qdrant
             
             # Stop only backend and frontend
             docker compose stop backend frontend
-
-            # Create .env files from secrets
-            cat > backend/.env << EOL
-            PORT=3000
-            NODE_ENV=production
-            REDIS_HOST=redis
-            REDIS_PORT=6379
-            QDRANT_URL=http://qdrant:6333
-            QDRANT_COLLECTION=news_embeddings
-            JINA_API_KEY=${{ secrets.JINA_API_KEY }}
-            JINA_MODEL=jina-embeddings-v2-base-en
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            GEMINI_MODEL=gemini-2.5-flash
-            DB_ENABLED=false
-            SESSION_TTL=3600
-            TOP_K_RESULTS=5
-            MAX_CONTEXT_LENGTH=4000
-            EOL
             
-            cat > frontend/.env << EOL
-            VITE_API_URL=http://34.93.236.123/backend
-            VITE_SOCKET_URL=http://34.93.236.123
-            EOL
-            
-            # Build and start backend and frontend
+            # Build (frontend .env is now available)
             docker compose build backend frontend
             docker compose up -d backend frontend
             
-            # Wait for backend to be ready
+            # Wait for backend
             sleep 15
             
-            # Check if data exists in Qdrant
+            # Check if data exists
             echo "🔍 Checking for existing data..."
             DATA_CHECK=$(docker compose exec -T backend sh -c "curl -s http://qdrant:6333/collections/news_embeddings 2>/dev/null | grep -c '\"status\":\"ok\"' || echo '0'")
             
             if [ "$DATA_CHECK" -eq "0" ]; then
-              echo "📦 No data found - Running ingestion (this takes ~1 minute)..."
+              echo "📦 Running ingestion..."
               docker compose exec -T backend node src/scripts/ingestNews.js
               echo "✅ Ingestion complete"
             else
-              echo "✅ Data already exists - Skipping ingestion"
+              echo "✅ Data exists - Skipping ingestion"
             fi
             
-            # Cleanup only dangling images
+            # Cleanup
             docker image prune -f
             
             # Show status
             docker compose ps
-          EOF
+          ENDSSH
 
       - name: Verify Deployment
         run: |

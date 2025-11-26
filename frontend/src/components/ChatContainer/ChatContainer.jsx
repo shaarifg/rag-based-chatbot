@@ -19,6 +19,7 @@ const ChatContainer = () => {
   const [connected, setConnected] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [currentResponse, setCurrentResponse] = useState("");
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -38,15 +39,25 @@ const ChatContainer = () => {
 
     // Check connection
     const checkConnection = setInterval(() => {
-      setConnected(socketService.socket?.connected || false);
-    }, 1000);
+      const isConnected = socketService.socket?.connected || false;
+      setConnected(isConnected);
+      if (isConnected && loading) {
+        setLoading(false);
+      }
+    }, 500);
 
     // Load history
     socketService.getHistory((history) => {
       if (history && history.length > 0) {
         setMessages(history);
       }
+      setLoading(false);
     });
+
+    // Set initial loading timeout
+    setTimeout(() => {
+      setLoading(false);
+    }, 3000);
 
     return () => {
       clearInterval(checkConnection);
@@ -85,6 +96,14 @@ const ChatContainer = () => {
       },
       (error) => {
         console.error("Send error:", error);
+        const errorMessage = {
+          role: "assistant",
+          content: `❌ Error: ${
+            error || "Failed to generate response. Please try again."
+          }`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
         setIsTyping(false);
         setCurrentResponse("");
       }
@@ -111,6 +130,15 @@ const ChatContainer = () => {
     handleSend(suggestion);
   };
 
+  if (loading) {
+    return (
+      <div className="chat-container__loader">
+        <div className="chat-container__loader-spinner"></div>
+        <div className="chat-container__loader-text">Connecting to chat...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-container">
       <Header connected={connected} sessionId={sessionId} />
@@ -118,7 +146,7 @@ const ChatContainer = () => {
       <div className="chat-container__messages">
         {messages.length === 0 && !isTyping ? (
           <div className="chat-container__empty">
-            <div className="chat-container__empty-icon">◆</div>
+            <div className="chat-container__empty-icon">💬</div>
             <h2 className="chat-container__empty-title">
               Welcome to NewsVoosh
             </h2>
@@ -166,7 +194,7 @@ const ChatContainer = () => {
       <ChatInput
         onSend={handleSend}
         onReset={handleReset}
-        disabled={isTyping}
+        disabled={isTyping || !connected}
       />
     </div>
   );
